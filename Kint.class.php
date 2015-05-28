@@ -14,6 +14,7 @@ require KINT_DIR . 'config.default.php';
 require KINT_DIR . 'parsers/parser.class.php';
 require KINT_DIR . 'decorators/rich.php';
 require KINT_DIR . 'decorators/plain.php';
+require KINT_DIR . 'decorators/log.php';
 
 if ( is_readable( KINT_DIR . 'config.php' ) ) {
 	require KINT_DIR . 'config.php';
@@ -52,6 +53,7 @@ class Kint
 	const MODE_WHITESPACE = 'w';
 	const MODE_CLI        = 'c';
 	const MODE_PLAIN      = 'p';
+	const MODE_LOG        = 'l';
 
 
 	public static $aliases = array(
@@ -193,9 +195,17 @@ class Kint
 		}
 		self::enabled( $mode );
 
-		$decorator = self::enabled() === self::MODE_RICH
-			? 'Kint_Decorators_Rich'
-			: 'Kint_Decorators_Plain';
+		switch (self::enabled()) {
+			case self::MODE_RICH:
+				$decorator = 'Kint_Decorators_Rich';
+				break;
+			case self::MODE_LOG:
+				$decorator = 'Kint_Decorators_Log';
+				break;
+			default:
+				$decorator = 'Kint_Decorators_Plain';
+				break;
+		}
 
 		$output = '';
 		if ( self::$_firstRun ) {
@@ -395,7 +405,7 @@ class Kint
 
 			$prevStep = $step;
 		}
-		$callee = $step;
+		$callee = $step['file'] == __FILE__ ? $prevStep : $step;
 
 		if ( !isset( $callee['file'] ) || !is_readable( $callee['file'] ) ) return false;
 
@@ -828,5 +838,37 @@ if ( !function_exists( 'sd' ) ) {
 		$params = func_get_args();
 		call_user_func_array( array( 'Kint', 'dump' ), $params );
 		die;
+	}
+}
+
+
+if ( !function_exists( 'l' ) ) {
+	/**
+	 * @see s()
+	 *
+	 * [!!!] IMPORTANT: execution will halt after call to this function
+	 *
+	 * @return string
+	 */
+	function l($msg)
+	{
+		$enabled = Kint::enabled();
+		if ( !$enabled ) return;
+
+		$restoreMode = $enabled;
+		Kint::enabled(Kint::MODE_LOG);
+
+		ob_start();
+		Kint::dump($msg);
+		$string = ob_get_clean();
+
+		$file = empty($params[1]) ? 'log.txt' : $params[1];
+		$file = __DIR__ . DIRECTORY_SEPARATOR . $file;
+
+		$fh = fopen($file, 'a');
+		fwrite($fh, $string . PHP_EOL);
+		fclose($fh);
+
+		Kint::enabled( $restoreMode );
 	}
 }
