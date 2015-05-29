@@ -4,6 +4,7 @@
  *
  * https://github.com/raveren/kint
  */
+
 if ( !class_exists( 'Kint', false ) ) return;
 
 define( 'KINT_DIR', dirname( __FILE__ ) . '/' );
@@ -181,7 +182,7 @@ class Kint
 			self::$returnOutput = true;
 			self::$_firstRun    = true;
 		}
-		if ( strpos( $modifiers, '~' ) !== false ) {
+		if ( strpos( $modifiers, '~' ) !== false && self::enabled() != self::MODE_LOG) {
 			self::enabled( self::MODE_WHITESPACE );
 		}
 
@@ -404,7 +405,7 @@ class Kint
 
 			$prevStep = $step;
 		}
-		$callee = $step['file'] == __FILE__ ? $prevStep : $step;
+		$callee = $step;
 
 		if ( !isset( $callee['file'] ) || !is_readable( $callee['file'] ) ) return false;
 
@@ -857,14 +858,12 @@ if ( !function_exists( 'l' ) ) {
 		$restoreMode = $enabled;
 		Kint::enabled(Kint::MODE_LOG);
 
-		ob_start();
-		Kint::dump($msg);
-		$string = ob_get_clean();
+		~$output = Kint::dump($msg);
 
 		$file = empty($params[1]) ? 'log.txt' : $params[1];
 		$file = __DIR__ . DIRECTORY_SEPARATOR . $file;
 
-		file_put_contents($file, $string, FILE_APPEND);
+		file_put_contents($file, $output, FILE_APPEND);
 
 		Kint::enabled( $restoreMode );
 	}
