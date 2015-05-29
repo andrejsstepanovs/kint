@@ -4,7 +4,6 @@
  *
  * https://github.com/raveren/kint
  */
-
 if ( !class_exists( 'Kint', false ) ) return;
 
 define( 'KINT_DIR', dirname( __FILE__ ) . '/' );
@@ -865,9 +864,7 @@ if ( !function_exists( 'l' ) ) {
 		$file = empty($params[1]) ? 'log.txt' : $params[1];
 		$file = __DIR__ . DIRECTORY_SEPARATOR . $file;
 
-		$fh = fopen($file, 'a');
-		fwrite($fh, $string . PHP_EOL);
-		fclose($fh);
+		file_put_contents($file, $string, FILE_APPEND);
 
 		Kint::enabled( $restoreMode );
 	}
